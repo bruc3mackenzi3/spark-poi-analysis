@@ -1,4 +1,4 @@
-_ID, TimeSt,Country,Province,City,Latitude,Longitude
+_ID,TimeSt,Country,Province,City,Latitude,Longitude
 4516516,2017-06-21 00:00:00.143,CA,ON,Waterloo,43.49347,-80.49123
 4516547,2017-06-21 18:00:00.193,CA,ON,London,42.93990,-81.27090
 4516550,2017-06-21 15:00:00.287,CA,ON,Guelph,43.57760,-80.22010
