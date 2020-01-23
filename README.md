@@ -7,8 +7,14 @@ From root directory:
 Access Spark UI:
 http://localhost:8080
 
-Attach to Docker Container:
+Attach to Docker Container running master Spark node:
 `docker exec -it eqworks-spark_master_1 /bin/bash`
+
+Run Python Spark application:
+`spark-submit /tmp/data/aggregate_poi.py`
+
+Stop Spark cluster
+`docker-compose down`
 
 ## Problem Description
 [https://gist.github.com/woozyking/f1d50e1fe1b3bf52e3748bc280cf941f](https://gist.github.com/woozyking/f1d50e1fe1b3bf52e3748bc280cf941f)
