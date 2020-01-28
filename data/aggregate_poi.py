@@ -53,7 +53,7 @@ class DataSource:
         def calc_nearest_poi(req_coord, poi_list):
             min_distance = None
             for poi in poi_list:
-                dist = geopy.distance.vincenty(req_coord, poi['Coord'])
+                dist = geopy.distance.vincenty(req_coord, poi['Coord']).km
                 if not min_distance or dist < min_distance[1]:
                     min_distance = (poi['POIID'], dist)
             return min_distance[0]
