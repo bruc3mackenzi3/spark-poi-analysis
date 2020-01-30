@@ -131,6 +131,23 @@ class DataSource:
         print('\n3. Analysis\n===========')
         poi_stats.show()
 
+    def export_data(self):
+        '''
+        Export requests to CSV
+        '''
+
+        foldername = '/tmp/data/request_data_tmp/'
+        filename = '/tmp/data/requests.csv'
+        print('Exporting data to csv...')
+        self.req_df.write.csv(foldername, header=True)
+
+        # Note: Data is exported into a folder and separate files by partition.
+        # Here we can assume one partition so move it with wildcard then delete
+        # the folder.
+        os.system('mv {}part-00000*.csv {}; rm -rf {}'.format(
+                foldername, filename, foldername))
+        print('Data available at ' + '/tmp/data/requests.csv')
+
 
 def main():
     data_source = DataSource()
@@ -139,6 +156,7 @@ def main():
     data_source.label_data()
     data_source.calc_poi_distance()
     data_source.analyze_data()
+    data_source.export_data()
 
     if DEBUG:
         data_source.req_df.show(3)
