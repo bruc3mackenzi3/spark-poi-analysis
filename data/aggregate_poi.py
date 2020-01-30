@@ -1,12 +1,13 @@
 import csv
+import os
 
-from pyspark import SparkConf, SparkContext
-from pyspark.sql import SparkSession
-from pyspark.sql import functions
-from pyspark.sql import types
 import geopy.distance
+from pyspark import SparkConf, SparkContext
+from pyspark.sql import SparkSession, functions, types
 
 APP_NAME = 'POI_AGGREGATION'
+DEBUG = True
+
 
 class DataSource:
     def __init__(self):
@@ -34,13 +35,14 @@ class DataSource:
             for row in reader:
                 row['Coord'] = (row['Latitude'], row['Longitude'])
                 self.poi_list.append(row)
-        print('POI List:', self.poi_list)
 
         # Load request data and filter bad requests
         self.req_df = self.spark.read.csv('/tmp/data/DataSample.csv',
                                           inferSchema='true', header='true')
-        print('Request data loaded.  Number of records:', self.req_df.count())
-        print(self.req_df.dtypes)
+        if DEBUG:
+            print('Request data loaded.  Number of records:', self.req_df.count())
+            print(self.req_df.dtypes)
+            print('\nPOI data loaded:', self.poi_list)
 
     def cleanup_data(self):
         ''' Clean data by removing suspected malicious requests.  Such requests
@@ -60,10 +62,13 @@ class DataSource:
                 .drop('count')
 
         # Perform an inner join so flagged records are omitted
-        self.req_df = self.req_df.join(groupedCoordDf, ['Latitude','Longitude', 'TimeSt'])
+        self.req_df = self.req_df.join(
+                groupedCoordDf,
+                ['Latitude','Longitude', 'TimeSt']
+        )
         filtered_count = self.req_df.count()
-        print('Size of joined data: {}, number of records removed: {}'.format(
-                filtered_count, raw_count-filtered_count))
+        print('\n1. Cleanup\n==========\nSize of raw data: {}\nSize of joined data: {}, number of records removed: {}'.format(
+                raw_count, filtered_count, raw_count-filtered_count))
 
     def label_data(self):
         ''' Label each record in request data with the nearest POI
@@ -71,11 +76,11 @@ class DataSource:
 
         # Given a request and all POI coordinates calculate each distance
         # and returns the nearest POI's ID
-        # Note: Uses Vincenty's formula from geopy library to calculate distance
+        # Note: Uses geopy library to calculate distance
         def calc_nearest_poi(req_coord, poi_list):
             min_distance = []
             for poi in poi_list:
-                dist = geopy.distance.vincenty(req_coord, poi['Coord']).km
+                dist = geopy.distance.distance(req_coord, poi['Coord']).km
                 if not min_distance or dist < min_distance[1]:
                     min_distance = (poi['POIID'], dist)
             return min_distance[0]
@@ -87,7 +92,11 @@ class DataSource:
 
         # Add new column to request data with the name of the nearest POI
         self.req_df = self.req_df.withColumn('NearestPOI', udf_label(self.poi_list)(functions.array('Latitude','Longitude')))
-        self.req_df.groupBy('NearestPOI').count().show()
+
+        print('\n2. Label\n========\nCalculated nearest POI to each request.  E.g.:')
+        self.req_df.show(3)
+        if DEBUG:
+            self.req_df.groupBy('NearestPOI').count().show()
 
     def calc_poi_distance(self):
         ''' Given a request and the nearest POI calculate and return the
@@ -115,8 +124,12 @@ class DataSource:
             standard deviation
         '''
 
+        # Part 1
         gdf = self.req_df.groupBy(self.req_df.NearestPOI)
-        gdf.agg(functions.mean('POIDistance').alias('AvgDistance'), functions.stddev('POIDistance').alias('StddevDistance')).show()
+        poi_stats = gdf.agg(functions.mean('POIDistance').alias('AvgDistance'), functions.stddev('POIDistance').alias('StddevDistance'))
+
+        print('\n3. Analysis\n===========')
+        poi_stats.show()
 
 
 def main():
@@ -127,7 +140,8 @@ def main():
     data_source.calc_poi_distance()
     data_source.analyze_data()
 
-    data_source.req_df.show(3)
+    if DEBUG:
+        data_source.req_df.show(3)
 
 
 if __name__ == '__main__':
