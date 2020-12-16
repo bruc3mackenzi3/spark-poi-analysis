@@ -1,5 +1,3 @@
-# EQWorks Data Engineer
-
 ## Solution
 From root directory:
 `docker-compose up -d`
@@ -47,12 +45,3 @@ The provided `docker-compose.yml` and Spark configurations in `conf` directory a
 ## Notes on working through the problems
 
 If you're not already familiar with [Apache Spark](http://spark.apache.org/), you'll need to go through its documentation for available APIs. The version that comes with the Docker Spark setup depends on https://github.com/gettyimages/docker-spark.
-
-For jobs that rely on external dependencies and libraries, make sure they are properly packaged on submission.
-
-On submission, we will need:
-
-1. Source code of the solution
-2. Build instructions for job packaging (unless your solution is a single `.py`), such as [Maven](https://maven.apache.org/) or [SBT](http://www.scala-sbt.org/) for Scala/Java, or `setup.py` for Python `.zip/.egg`
-
-Make sure the jobs can be submitted (through `spark-submit` command) in the Spark Master container shell. There is a `data` directory provided that maps between the Spark Master container and your host system, which is accessible as `/tmp/data` within the Docker container -- this is where you want to place both your jobs and work sample data, the latter is already included.
